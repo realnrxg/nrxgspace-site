@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nrxgs space</title>
+  <link rel="icon" type="image/png" href="https://github.com/realnrxg/hyprland-dots/blob/main/ignore-this/icon.png?raw=true">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      overflow: hidden;
+    }
+
+    .terminal {
+      background: #000 url('https://raw.githubusercontent.com/realnrxg/hyprland-dots/699e6abfe4197e12aa7145e554e72e10d21744ee/ignore-this/bg.gif') center/cover no-repeat;
+      color: #0044cc;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      height: 100vh;
+      padding: 20px;
+      overflow-y: auto;
+      position: relative;
+      animation: flicker 2s infinite;
+    }
+
+    @keyframes flicker {
+      0% { opacity: 0.98; }
+      50% { opacity: 1; }
+      100% { opacity: 0.98; }
+    }
+
+    .scanline-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 2px,
+        rgba(0, 0, 0, 0.2) 2px,
+        rgba(0, 0, 0, 0.2) 4px
+      );
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .output {
+      margin-bottom: 10px;
+      white-space: pre-wrap;
+    }
+
+    .input-line {
+      display: flex;
+      align-items: center;
+    }
+
+    .prompt {
+      white-space: nowrap;
+      margin-right: 5px;
+    }
+
+    #command-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: inherit;
+      font-family: inherit;
+      font-size: inherit;
+      caret-color: #1e90ff;
+    }
+
+    .output-line {
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="terminal" id="terminal">
+    <div class="scanline-overlay"></div>
+    <div class="output" id="output"></div>
+    <div class="input-line">
+      <span class="prompt">user@server > </span>
+      <input type="text" id="command-input" autocomplete="off">
+    </div>
+  </div>
+
+  <script>
+    const terminal = document.getElementById('terminal');
+    const output = document.getElementById('output');
+    const commandInput = document.getElementById('command-input');
+
+    const bootLines = [
+      '[ OK ] Initializing Linux Kernel 7.0.0...',
+      '[ OK ] Loading modules: storage, network, display...',
+      '[ OK ] Mounting virtual file systems...',
+      '[ OK ] Checking memory...',
+      '[ OK ] Loading kernel modules...',
+      '[ OK ] Configuring network interfaces...',
+      '[ OK ] Starting system daemon...',
+      '[ OK ] Initializing GPU drivers...',
+      '[ OK ] Loading user environment...',
+      '[ OK ] Starting session for user: guest'
+    ];
+
+    let bootIndex = 0;
+
+    function scrollToBottom() {
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function printBootLine() {
+      if (bootIndex < bootLines.length) {
+        const line = document.createElement('div');
+        line.className = 'output-line';
+        line.textContent = bootLines[bootIndex];
+        output.appendChild(line);
+        bootIndex++;
+        scrollToBottom();
+        setTimeout(printBootLine, 80);
+      } else {
+        setTimeout(() => {
+          for (let i = 0; i < 3; i++) {
+            const space = document.createElement('div');
+            space.className = 'output-line';
+            space.textContent = '';
+            output.appendChild(space);
+          }
+          const helpMsg = document.createElement('div');
+          helpMsg.className = 'output-line';
+          helpMsg.textContent = "Type 'help' to show available commands.";
+          output.appendChild(helpMsg);
+          scrollToBottom();
+          commandInput.disabled = false;
+          commandInput.focus();
+        }, 500);
+      }
+    }
+
+    function processCommand(cmd) {
+      const lowerCmd = cmd.toLowerCase();
+      let response = '';
+
+      if (lowerCmd === 'help') {
+        response = `Available commands:
+- help: Show this help message
+- links -show: Display socials
+- projects: List projects
+- clear: Clear terminal `;
+      } else if (lowerCmd === 'links -show') {
+        const linksDiv = document.createElement('div');
+        linksDiv.innerHTML = `* GitHub: <a href="https://github.com/realnrxg" target="_blank" style="color:#0044cc;">github.com/realnrxg</a>
+* Codeberg: <a href="https://codeberg.org/nrxg" target="_blank" style="color:#0044cc;">codeberg.org/nrxg</a>
+* FakeCrime: <a href="https://fakecrime.bio/nrxg" target="_blank" style="color:#0044cc;">fakecrime.bio/nrxg</a>`;
+        output.appendChild(linksDiv);
+        return;
+      } else if (lowerCmd === 'projects') {
+        response = `Venta
+Anonymizer (In Progress not public yet)`;
+      } else if (lowerCmd === 'clear') {
+        output.innerHTML = '';
+        return;
+      } else {
+        response = `bash: command not found: ${cmd}`;
+      }
+
+      const respLine = document.createElement('div');
+      respLine.className = 'output-line';
+      respLine.textContent = response;
+      output.appendChild(respLine);
+    }
+
+    commandInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const cmd = commandInput.value.trim();
+        if (cmd) {
+          const cmdLine = document.createElement('div');
+          cmdLine.className = 'output-line';
+          cmdLine.textContent = `user@server > ${cmd}`;
+          output.appendChild(cmdLine);
+
+          processCommand(cmd);
+
+          commandInput.value = '';
+          scrollToBottom();
+        }
+      }
+    });
+
+    window.addEventListener('load', () => {
+      printBootLine();
+    });
+  </script>
+</body>
+</html>
